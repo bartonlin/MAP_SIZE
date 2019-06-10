@@ -395,10 +395,7 @@ for txt_file in ground_truth_files_list:
         if class_name in args.ignore:
             continue
         bbox = left + " " + top + " " + right + " " +bottom
-        print("NOT IN")
         if det_area > 9216:
-            print("GET IN")
-            print(det_area)
             if is_difficult:
                     bounding_boxes.append({"class_name":class_name, "bbox":bbox, "used":False, "difficult":True})
                     is_difficult = False
@@ -489,12 +486,11 @@ for class_index, class_name in enumerate(gt_classes):
             if tmp_class_name == class_name:
                 #print("match")
                 bbox = left + " " + top + " " + right + " " +bottom
-                print("2:")
-                print(det_area)
                 if det_area > 9216:
                   bounding_boxes.append({"confidence":confidence, "file_id":file_id, "bbox":bbox})
                 #print(bounding_boxes)
     # sort detection-results by decreasing confidence
+
     bounding_boxes.sort(key=lambda x:float(x['confidence']), reverse=True)
     with open(TEMP_FILES_PATH + "/" + class_name + "_dr.json", 'w') as outfile:
         json.dump(bounding_boxes, outfile)

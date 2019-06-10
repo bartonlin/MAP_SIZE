@@ -490,18 +490,18 @@ for txt_file in ground_truth_files_list:
                             counter_images_per_class_S[class_name] = 1
                         already_seen_classes_S.append(class_name)
 
-    if det_area > 9216:
-        # dump bounding_boxes into a ".json" file
-        with open(TEMP_FILES_PATH_L + "/" + file_id + "_ground_truth.json", 'w') as outfile_L:
-            json.dump(bounding_boxes_L, outfile_L)
-    if det_area <= 9216 and det_area > 1024:
-        # dump bounding_boxes into a ".json" file
-        with open(TEMP_FILES_PATH_M + "/" + file_id + "_ground_truth.json", 'w') as outfile_M:
-            json.dump(bounding_boxes_M, outfile_M)
-    if det_area <= 1024:
-        # dump bounding_boxes into a ".json" file
-        with open(TEMP_FILES_PATH_S + "/" + file_id + "_ground_truth.json", 'w') as outfile_S:
-            json.dump(bounding_boxes_S, outfile_S)
+
+    # dump bounding_boxes into a ".json" file
+    with open(TEMP_FILES_PATH_L + "/" + file_id + "_ground_truth.json", 'w') as outfile_L:
+        json.dump(bounding_boxes_L, outfile_L)
+
+    # dump bounding_boxes into a ".json" file
+    with open(TEMP_FILES_PATH_M + "/" + file_id + "_ground_truth.json", 'w') as outfile_M:
+        json.dump(bounding_boxes_M, outfile_M)
+
+    # dump bounding_boxes into a ".json" file
+    with open(TEMP_FILES_PATH_S + "/" + file_id + "_ground_truth.json", 'w') as outfile_S:
+        json.dump(bounding_boxes_S, outfile_S)
 
 gt_classes_L = list(gt_counter_per_class_L.keys())
 gt_classes_L = sorted(gt_classes_L)
@@ -558,8 +558,11 @@ format_check(gt_classes_S)
 # get a list with the detection-results files
 dr_files_list = glob.glob(DR_PATH + '/*.txt')
 dr_files_list.sort()
-def det_2(gt_classes, TEMP_FILES_PATH):
+def det_2(gt_classes):
     for class_index, class_name in enumerate(gt_classes):
+        bounding_boxes_L = []
+        bounding_boxes_M = []
+        bounding_boxes_S = []
         for txt_file in dr_files_list:
             #print(txt_file)
             # the first time it checks if all the corresponding ground-truth files exist
@@ -593,28 +596,31 @@ def det_2(gt_classes, TEMP_FILES_PATH):
                     if det_area_2 <= 1024:
                         bounding_boxes_S.append({"confidence":confidence, "file_id":file_id, "bbox":bbox})
                         #print(bounding_boxes_S)
+                        
         # sort detection-results by decreasing confidence
         bounding_boxes_L.sort(key=lambda x:float(x['confidence']), reverse=True)
-        with open(TEMP_FILES_PATH + "/" + class_name + "_dr.json", 'w') as outfile:
+        with open(TEMP_FILES_PATH_L + "/" + class_name + "_dr.json", 'w') as outfile:
             json.dump(bounding_boxes_L, outfile)
+        
         # sort detection-results by decreasing confidence
         bounding_boxes_M.sort(key=lambda x:float(x['confidence']), reverse=True)
-        with open(TEMP_FILES_PATH + "/" + class_name + "_dr.json", 'w') as outfile:
+        with open(TEMP_FILES_PATH_M + "/" + class_name + "_dr.json", 'w') as outfile:
             json.dump(bounding_boxes_M, outfile)
+        
         # sort detection-results by decreasing confidence
         bounding_boxes_S.sort(key=lambda x:float(x['confidence']), reverse=True)
-        with open(TEMP_FILES_PATH + "/" + class_name + "_dr.json", 'w') as outfile:
+        with open(TEMP_FILES_PATH_S + "/" + class_name + "_dr.json", 'w') as outfile:
             json.dump(bounding_boxes_S, outfile)
-det_2(gt_classes_L, TEMP_FILES_PATH_L)
-det_2(gt_classes_M, TEMP_FILES_PATH_M)
-det_2(gt_classes_S, TEMP_FILES_PATH_S)
+
+det_2(gt_classes_L)
+det_2(gt_classes_M)
+det_2(gt_classes_S)
         
 """
  Calculate the AP for each class
 """
 #mAP = 0
-def calculate_AP(mAP,
-                 gt_classes,
+def calculate_AP(gt_classes,
                  n_classes,
                  ap_dictionary,
                  lamr_dictionary,
@@ -850,12 +856,13 @@ def calculate_AP(mAP,
         text = "mAP = {0:.2f}%".format(mAP*100)
         results_file.write(text + "\n")
         print(text)
+        return mAP
 
 mAP_L = 0
 ap_dictionary_L = {}
 lamr_dictionary_L = {}
 count_true_positives_L = {}
-calculate_AP(mAP_L, gt_classes_L, n_classes_L, ap_dictionary_L, lamr_dictionary_L, count_true_positives_L, results_files_path_L, gt_counter_per_class_L, counter_images_per_class_L,TEMP_FILES_PATH_L)
+mAP_L = calculate_AP(gt_classes_L, n_classes_L, ap_dictionary_L, lamr_dictionary_L, count_true_positives_L, results_files_path_L, gt_counter_per_class_L, counter_images_per_class_L,TEMP_FILES_PATH_L)
 # remove the temp_files directory
 shutil.rmtree(TEMP_FILES_PATH_L)
 
@@ -863,7 +870,7 @@ mAP_M = 0
 ap_dictionary_M = {}
 lamr_dictionary_M = {}
 count_true_positives_M = {}
-calculate_AP(mAP_M, gt_classes_M, n_classes_M, ap_dictionary_M, lamr_dictionary_M, count_true_positives_M, results_files_path_M, gt_counter_per_class_M, counter_images_per_class_M,TEMP_FILES_PATH_M)
+mAP_M = calculate_AP(gt_classes_M, n_classes_M, ap_dictionary_M, lamr_dictionary_M, count_true_positives_M, results_files_path_M, gt_counter_per_class_M, counter_images_per_class_M,TEMP_FILES_PATH_M)
 # remove the temp_files directory
 shutil.rmtree(TEMP_FILES_PATH_M)
 
@@ -871,7 +878,7 @@ mAP_S = 0
 ap_dictionary_S = {}
 lamr_dictionary_S = {}
 count_true_positives_S = {}
-calculate_AP(mAP_S, gt_classes_S, n_classes_S, ap_dictionary_S, lamr_dictionary_S, count_true_positives_S, results_files_path_S, gt_counter_per_class_S, counter_images_per_class_S,TEMP_FILES_PATH_S)
+mAP_S = calculate_AP(gt_classes_S, n_classes_S, ap_dictionary_S, lamr_dictionary_S, count_true_positives_S, results_files_path_S, gt_counter_per_class_S, counter_images_per_class_S,TEMP_FILES_PATH_S)
 # remove the temp_files directory
 shutil.rmtree(TEMP_FILES_PATH_S)
 
@@ -905,15 +912,15 @@ for txt_file in dr_files_list:
             count_object(det_counter_per_class_M)
         if det_area <= 1024:
             count_object(det_counter_per_class_S)
-if det_area > 9216:
-    #print(det_counter_per_class)
-    dr_classes = list(det_counter_per_class_L.keys())
-if det_area <= 9216 and det_area > 1024:
-    #print(det_counter_per_class)
-    dr_classes = list(det_counter_per_class_M.keys())
-if det_area <= 1024:         
-    #print(det_counter_per_class)
-    dr_classes = list(det_counter_per_class_S.keys())
+
+#print(det_counter_per_class)
+dr_classes_L = list(det_counter_per_class_L.keys())
+
+#print(det_counter_per_class)
+dr_classes_M = list(det_counter_per_class_M.keys())
+    
+#print(det_counter_per_class)
+dr_classes_S = list(det_counter_per_class_S.keys())
 
 
 """
@@ -953,7 +960,7 @@ write_result_txt(results_files_path_L, class_name, gt_counter_per_class_L)
 write_result_txt(results_files_path_M, class_name, gt_counter_per_class_M)
 write_result_txt(results_files_path_S, class_name, gt_counter_per_class_S)
 
-def count_true_positives(class_name, dr_classes, gt_classes, count_true_positives):
+def true_positives(class_name, dr_classes, gt_classes, count_true_positives):
     """
      Finish counting true positives
     """
@@ -964,11 +971,11 @@ def count_true_positives(class_name, dr_classes, gt_classes, count_true_positive
     #print(count_true_positives)
     
 
-count_true_positives(class_name, dr_classes, gt_classes_L, count_true_positives_L)
-count_true_positives(class_name, dr_classes, gt_classes_M, count_true_positives_M)
-count_true_positives(class_name, dr_classes, gt_classes_S, count_true_positives_S)
+true_positives(class_name, dr_classes_L, gt_classes_L, count_true_positives_L)
+true_positives(class_name, dr_classes_M, gt_classes_M, count_true_positives_M)
+true_positives(class_name, dr_classes_S, gt_classes_S, count_true_positives_S)
 
-def draw(det_counter_per_class, results_files_path):
+def draw(det_counter_per_class, results_files_path, count_true_positives):
     """
      Plot the total number of occurences of each class in the "detection-results" folder
     """
@@ -988,11 +995,11 @@ def draw(det_counter_per_class, results_files_path):
         draw_plot_func(det_counter_per_class, len(det_counter_per_class), window_title, plot_title, x_label, output_path, to_show, plot_color, true_p_bar)
 
 
-draw(det_counter_per_class_L, results_files_path_L)
-draw(det_counter_per_class_M, results_files_path_M) 
-draw(det_counter_per_class_S, results_files_path_S)
+draw(det_counter_per_class_L, results_files_path_L, count_true_positives_L)
+draw(det_counter_per_class_M, results_files_path_M, count_true_positives_M) 
+draw(det_counter_per_class_S, results_files_path_S, count_true_positives_S)
     
-def number_result(results_files_path, det_counter_per_class):
+def number_result(dr_classes, results_files_path, det_counter_per_class, count_true_positives):
     """
      Write number of detected objects per class to results.txt
     """
@@ -1005,9 +1012,9 @@ def number_result(results_files_path, det_counter_per_class):
             text += ", fp:" + str(n_det - count_true_positives[class_name]) + ")\n"
             results_file.write(text)
 
-number_result(results_files_path_L, det_counter_per_class_L)        
-number_result(results_files_path_M, det_counter_per_class_M)
-number_result(results_files_path_S, det_counter_per_class_S)
+number_result(dr_classes_L, results_files_path_L, det_counter_per_class_L, count_true_positives_L)        
+number_result(dr_classes_M, results_files_path_M, det_counter_per_class_M, count_true_positives_M)
+number_result(dr_classes_S, results_files_path_S, det_counter_per_class_S, count_true_positives_S)
 
 
 """
@@ -1039,14 +1046,14 @@ if draw_plot:
     to_show = True
     plot_color = 'royalblue'
     
-    plot_title = "mAP = {0:.2f}%".format(mAP_L*100)
+    plot_title = "Large mAP = {0:.2f}%".format(mAP_L*100)
     output_path = results_files_path_L + "/mAP.png"
-    draw_plot_func(ap_dictionary_L, n_classes_L, window_title, plot_title, x_label, output_path, to_show, plot_color, "")
+    draw_plot_func(ap_dictionary_L, n_classes_L, "Large mAP", plot_title, x_label, output_path, to_show, plot_color, "")
     
-    plot_title = "mAP = {0:.2f}%".format(mAP_M*100)
+    plot_title = "Medium mAP = {0:.2f}%".format(mAP_M*100)
     output_path = results_files_path_M + "/mAP.png"
-    draw_plot_func(ap_dictionary_M, n_classes_M, window_title, plot_title, x_label, output_path, to_show, plot_color, "")
+    draw_plot_func(ap_dictionary_M, n_classes_M, "Medium mAP", plot_title, x_label, output_path, to_show, plot_color, "")
     
-    plot_title = "mAP = {0:.2f}%".format(mAP_S*100)
+    plot_title = "Small mAP = {0:.2f}%".format(mAP_S*100)
     output_path = results_files_path_S + "/mAP.png"
-    draw_plot_func(ap_dictionary_S, n_classes_S, window_title, plot_title, x_label, output_path, to_show, plot_color, "")
+    draw_plot_func(ap_dictionary_S, n_classes_S, "Small mAP", plot_title, x_label, output_path, to_show, plot_color, "")
